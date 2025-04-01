@@ -1,6 +1,6 @@
 from datacenter.models import Schoolkid, Mark, Chastisement, Lesson, Commendation
 import random
-
+from django.core.exceptions import ObjectDoesNotExist
 
 PRAISE_TEXTS = [
     "Молодец!",
@@ -60,6 +60,8 @@ def create_commendation(schoolkid, subject_name):
         .order_by("-date")
         .first()
     )
+    if lesson is None:
+        print(f"Урок{subject_name} не найден для ученика {child.full_name}")
     Commendation.objects.filter(
         schoolkid=child, subject=lesson.subject, created=lesson.date
     ).exists()
@@ -75,8 +77,11 @@ def create_commendation(schoolkid, subject_name):
 
 
 if __name__ == "__main__":
-    child = Schoolkid.objects.get(full_name__contains="Фролов Иван")
-    print(f"Ученик: {child.full_name}")
-    fix_marks(child)
-    remove_chastisements(child)
-    create_commendation(child, "Математика")
+    try:
+        child = Schoolkid.objects.get(full_name__contains="Фролов Иван")
+        print(f"Ученик: {child.full_name}")
+        fix_marks(child)
+        remove_chastisements(child)
+        create_commendation(child, "Математика")
+    except ObjectDoesNotExist:  # Ловим исключение, если ученик не найден
+        print("Ученик с фамилией 'Фролов' не найден.")
