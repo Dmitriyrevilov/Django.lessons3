@@ -1,6 +1,6 @@
 from datacenter.models import Schoolkid, Mark, Chastisement, Lesson, Commendation
 import random
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 PRAISE_TEXTS = [
     "Молодец!",
@@ -51,29 +51,32 @@ def remove_chastisements(schoolkid):
 
 
 def create_commendation(schoolkid, subject_name):
-    lesson = (
-        Lesson.objects.filter(
-            year_of_study=schoolkid.year_of_study,
-            group_letter=schoolkid.group_letter,
-            subject__title=subject_name,
+    try:
+        lesson = (
+            Lesson.objects.filter(
+                year_of_study=schoolkid.year_of_study,
+                group_letter=schoolkid.group_letter,
+                subject__title=subject_name,
+            )
+            .order_by("-date")
+            .first()
         )
-        .order_by("-date")
-        .first()
-    )
-    if lesson is None:
-        print(f"Урок{subject_name} не найден для ученика {child.full_name}")
-    Commendation.objects.filter(
-        schoolkid=child, subject=lesson.subject, created=lesson.date
-    ).exists()
-    praise_text = random.choice(PRAISE_TEXTS)
-    Commendation.objects.create(
-        text=praise_text,
-        created=lesson.date,
-        schoolkid=schoolkid,
-        subject=lesson.subject,
-        teacher=lesson.teacher,
-    )
-    print("Похвала создана!")
+        if not lesson:
+            print(f"Урок{subject_name} не найден для ученика {child.full_name}")
+        Commendation.objects.filter(
+            schoolkid=child, subject=lesson.subject, created=lesson.date
+        ).exists()
+        praise_text = random.choice(PRAISE_TEXTS)
+        Commendation.objects.create(
+            text=praise_text,
+            created=lesson.date,
+            schoolkid=schoolkid,
+            subject=lesson.subject,
+            teacher=lesson.teacher,
+        )
+        print("Похвала создана!")
+    except Exception as e:
+        print(f"Произошла ошибка при создании похвалы: {e}")
 
 
 if __name__ == "__main__":
@@ -85,3 +88,5 @@ if __name__ == "__main__":
         create_commendation(child, "Математика")
     except ObjectDoesNotExist:
         print("Ученик с фамилией 'Фролов' не найден.")
+    except MultipleObjectsReturned:
+        print("Найдено несколько учеников с данной фамилией 'Фролов'")
