@@ -83,5 +83,5 @@ if __name__ == "__main__":
         fix_marks(child)
         remove_chastisements(child)
         create_commendation(child, "Математика")
-    except ObjectDoesNotExist:  # Ловим исключение, если ученик не найден
+    except ObjectDoesNotExist:
         print("Ученик с фамилией 'Фролов' не найден.")
